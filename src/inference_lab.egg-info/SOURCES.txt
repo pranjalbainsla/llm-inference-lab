@@ -1,7 +1,0 @@
-README.md
-pyproject.toml
-src/inference_lab.egg-info/PKG-INFO
-src/inference_lab.egg-info/SOURCES.txt
-src/inference_lab.egg-info/dependency_links.txt
-src/inference_lab.egg-info/requires.txt
-src/inference_lab.egg-info/top_level.txt
