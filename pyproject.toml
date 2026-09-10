@@ -10,9 +10,8 @@ requires-python = ">=3.12"
 dependencies = [
     "fastapi",
     "uvicorn",
-    "torch==2.2.2",
-    "transformers<5",
-    "numpy<2",
+    "torch>=2.6",
+    "transformers"
 ]
 
 [project.optional-dependencies]
