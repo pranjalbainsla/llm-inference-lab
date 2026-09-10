@@ -1,4 +1,5 @@
 import time
+import torch
 
 from .model import Model
 from .schemas import GenerateRequest, GenerateResponse
@@ -20,7 +21,11 @@ class InferenceEngine:
             key: value.to(self.model.model.device)
             for key, value in model_inputs.items()
         }
-        generated_ids = self.model.model.generate(**model_inputs, max_new_tokens=max_new_tokens)
+        with torch.inference_mode():
+            generated_ids = self.model.model.generate(
+                **model_inputs,
+                max_new_tokens=max_new_tokens,
+            )
         generated_text = self.model.tokenizer.batch_decode(
             generated_ids[:, input_tokens:], 
             skip_special_tokens=True
