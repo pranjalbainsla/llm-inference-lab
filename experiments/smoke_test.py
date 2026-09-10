@@ -19,4 +19,7 @@ request = GenerateRequest(
 
 response = engine.generate(request)
 
-print(response.text)
+print(f"text={response.text}")
+print(f"input_tokens={response.input_tokens}")
+print(f"output_tokens={response.output_tokens}")
+print(f"latency_ms={response.latency_ms}")
