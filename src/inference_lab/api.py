@@ -1,16 +1,19 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+import logging
 from .model import Model
 from .config import Settings
 from .engine import InferenceEngine
 from .schemas import GenerateRequest, GenerateResponse
+
+logger = logging.getLogger(__name__)
 
 settings = Settings()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # startup
-    print("Loading model...")
+    logger.info("Loading model...")
     model = Model(
         model_name=settings.model_name,
         device=settings.device,
@@ -21,7 +24,7 @@ async def lifespan(app: FastAPI):
     yield
 
     # shutdown
-    print("Cleaning up...")
+    logger.info("Cleaning up...")
     del app.state.engine
 
 app = FastAPI(lifespan=lifespan)
