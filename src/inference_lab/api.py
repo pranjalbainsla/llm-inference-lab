@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 import logging
 from .model import Model
 from .config import Settings
@@ -35,4 +35,11 @@ def health() -> dict[str, str]:
 
 @app.post("/generate")
 def generate(request: GenerateRequest) -> GenerateResponse:
-    return app.state.engine.generate(request)
+    try:
+        return app.state.engine.generate(request)
+    except Exception as exc:
+        logger.exception("Inference failed") 
+        raise HTTPException(
+            status_code=500,
+            detail="Inference failed",
+        ) from exc
