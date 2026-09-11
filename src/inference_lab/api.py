@@ -8,38 +8,47 @@ from .schemas import GenerateRequest, GenerateResponse
 
 logger = logging.getLogger(__name__)
 
-settings = Settings()
+def create_app(engine = None) -> FastAPI:
+    settings = Settings()
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # startup
-    logger.info("Loading model...")
-    model = Model(
-        model_name=settings.model_name,
-        device=settings.device,
-    )
-    engine = InferenceEngine(model)
-    app.state.engine = engine
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        # startup
+        if engine is None:
+            logger.info("Loading model...")
+            model = Model(
+                model_name=settings.model_name,
+                device=settings.device,
+            )
+            runtime_engine = InferenceEngine(model)
+        else:
+            runtime_engine = engine
+        app.state.engine = runtime_engine
 
-    yield
+        yield
 
-    # shutdown
-    logger.info("Cleaning up...")
-    del app.state.engine
+        # shutdown
+        logger.info("Cleaning up...")
+        del app.state.engine
 
-app = FastAPI(lifespan=lifespan)
+    app = FastAPI(lifespan=lifespan)
 
-@app.get("/health")
-def health() -> dict[str, str]:
-    return {"status": "ok"}
+    @app.get("/health")
+    def health() -> dict[str, str]:
+        return {"status": "ok"}
 
-@app.post("/generate")
-def generate(request: GenerateRequest) -> GenerateResponse:
-    try:
-        return app.state.engine.generate(request)
-    except Exception as exc:
-        logger.exception("Inference failed") 
-        raise HTTPException(
-            status_code=500,
-            detail="Inference failed",
-        ) from exc
+    @app.post("/generate")
+    def generate(request: GenerateRequest) -> GenerateResponse:
+        try:
+            return app.state.engine.generate(request)
+        except Exception as exc:
+            logger.exception("Inference failed") 
+            raise HTTPException(
+                status_code=500,
+                detail="Inference failed",
+            ) from exc
+        
+    return app
+
+app = create_app()
+
