@@ -2,6 +2,7 @@ import torch
 
 from inference_lab.engine import InferenceEngine
 from inference_lab.schemas import GenerateRequest
+from inference_lab.model import Model
 
 
 class FakeTokenizer:
@@ -34,6 +35,24 @@ class FakeModelWrapper:
         self.tokenizer = FakeTokenizer()
         self.model = FakeModel()
 
+def test_generate_naive():
+    model = Model(
+        model_name="sshleifer/tiny-gpt2",
+        device="cuda",
+    )
+    engine = InferenceEngine(model)
+
+    request = GenerateRequest(
+        prompt="Hello",
+        max_new_tokens=5,
+    )
+
+    response = engine.generate_naive(request)
+
+    assert response.text
+    assert response.input_tokens > 0
+    assert response.output_tokens == 5
+    assert response.latency_ms > 0
 
 def test_generate():
     model = FakeModelWrapper()
