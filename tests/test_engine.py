@@ -35,6 +35,21 @@ class FakeModelWrapper:
         self.tokenizer = FakeTokenizer()
         self.model = FakeModel()
 
+def test_generate():
+    model = FakeModelWrapper()
+    engine = InferenceEngine(model)
+
+    request = GenerateRequest(
+        prompt="hello",
+        max_new_tokens=3,
+    )
+
+    response = engine.generate(request)
+
+    assert response.text == "fake output"
+    assert response.input_tokens == 5
+    assert response.output_tokens == 3
+
 def test_generate_naive():
     model = Model(
         model_name="sshleifer/tiny-gpt2",
@@ -54,17 +69,21 @@ def test_generate_naive():
     assert response.output_tokens == 5
     assert response.latency_ms > 0
 
-def test_generate():
-    model = FakeModelWrapper()
+def test_naive_and_cached_generation_match():
+    model = Model(
+        model_name="sshleifer/tiny-gpt2",
+        device="cuda",
+    )
     engine = InferenceEngine(model)
 
     request = GenerateRequest(
-        prompt="hello",
-        max_new_tokens=3,
+        prompt="explain deep learning",
+        max_new_tokens=5,
     )
 
-    response = engine.generate(request)
+    naive = engine.generate_naive(request)
+    cached = engine.generate_cached(request)
 
-    assert response.text == "fake output"
-    assert response.input_tokens == 5
-    assert response.output_tokens == 3
+    assert naive.text == cached.text
+    assert naive.input_tokens == cached.input_tokens
+    assert naive.output_tokens == cached.output_tokens
