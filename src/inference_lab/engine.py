@@ -45,7 +45,8 @@ class InferenceEngine:
 
     def generate_cached(self, request: GenerateRequest) -> GenerateResponse:
         prompt, max_new_tokens = request.prompt, request.max_new_tokens
-
+        
+        torch.cuda.synchronize()
         start_time = time.perf_counter()
 
         model_inputs = self.model.tokenizer(
@@ -86,11 +87,14 @@ class InferenceEngine:
             skip_special_tokens=True,
         )[0]
 
+        torch.cuda.synchronize()
+        latency_ms = (time.perf_counter() - start_time) * 1000
+
         return GenerateResponse(
             text=generated_text,
             input_tokens=input_tokens,
             output_tokens=input_ids.shape[1] - input_tokens,
-            latency_ms=(time.perf_counter() - start_time) * 1000,
+            latency_ms=latency_ms,
         )
 
     def generate(self, request: GenerateRequest) -> GenerateResponse:
