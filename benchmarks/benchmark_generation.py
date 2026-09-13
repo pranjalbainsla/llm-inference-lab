@@ -58,3 +58,4 @@ for n in [10, 50, 100, 200]:
         "naive_tok_s": naive["tokens_per_sec"],
         "cached_tok_s": cached["tokens_per_sec"],
     })
+print(results)
