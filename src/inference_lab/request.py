@@ -4,6 +4,8 @@ from dataclasses import dataclass, field
 
 import torch
 
+from cache import KVCache
+
 @dataclass
 class Request:
     request_id: str = field(default_factory=lambda: str(uuid.uuid4()))
@@ -17,6 +19,10 @@ class Request:
 
     finished: bool = False
     finish_reason: str | None = None  # "eos" | "length" | "stop_str" | "abort"; useful for logging/debugging and API responses
+
+    # Runtime generation state
+    cache: KVCache | None = None
+    outputs: object | None = None
 
     # sampling params almost always live per-request, not global
     # temperature: float = 1.0
