@@ -5,11 +5,13 @@ from .model import Model
 from .schemas import GenerateRequest, GenerateResponse
 from .cache import KVCache
 from .request import Request
+from .scheduler import Scheduler
 
 
 class InferenceEngine:
     def __init__(self, model: Model):
         self.model = model
+        self.scheduler = Scheduler()
     
     def generate(self, request: GenerateRequest) -> GenerateResponse:
         prompt, max_new_tokens = request.prompt, request.max_new_tokens
@@ -189,3 +191,41 @@ class InferenceEngine:
                 past_key_values=request.cache.get(),
                 use_cache=True,
             )
+
+    def generate_cached(self, request: Request) -> GenerateResponse:
+        start_time = time.perf_counter()
+
+        self.scheduler.add_request(request)
+
+        while self.scheduler.has_work():
+            running = self.scheduler.schedule()
+
+            # Prefill newly admitted requests
+            for req in running:
+                if req.input_ids is None:
+                    self.prefill(req)
+
+            # One decode step for every running request
+            for req in list(running):
+                if req.finished:
+                    self.scheduler.finish_request(req)
+                    continue
+
+                self.decode_step(req)
+
+                if req.finished:
+                    self.scheduler.finish_request(req)
+
+        generated_text = self.model.tokenizer.decode(
+            request.output_ids,
+            skip_special_tokens=True,
+        )
+
+        latency_ms = (time.perf_counter() - start_time) * 1000
+
+        return GenerateResponse(
+            text=generated_text,
+            input_tokens=request.input_tokens,
+            output_tokens=request.num_generated(),
+            latency_ms=latency_ms,
+        )
